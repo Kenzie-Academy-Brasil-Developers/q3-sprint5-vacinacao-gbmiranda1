@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from logging.config import valid_ident
 from app.models.vaccine_model import VaccineModel
 from sqlalchemy.exc import IntegrityError
 from app.configs.database import db
@@ -7,7 +8,8 @@ from flask import request, jsonify
 request_keys = ["cpf", "name", "vaccine_name", "health_unit_name"]
 
 def create_vaccine():
-    data = request.get_json()
+    request_data = request.get_json()
+    data = {"cpf": request_data["cpf"], "name": request_data["name"], "vaccine_name": request_data["vaccine_name"], "health_unit_name": request_data["health_unit_name"]}
     data_keys = data.keys()
     missing_keys = []
     missing_values_type = []
@@ -23,24 +25,25 @@ def create_vaccine():
         if key not in data_keys:
             missing_keys.append(key)
     if len(missing_keys) > 0:
-        return {"error": f"missing key {key}"}, HTTPStatus.BAD_REQUEST
-    
-   
+        return {"error": f"missing key {missing_keys}"}, HTTPStatus.BAD_REQUEST
+
 
     try:
         if len(data["cpf"]) != 11:
             return {"error": "cpf must contain 11 characters"}, 400
         else:
+
             data["health_unit_name"] = data["health_unit_name"].title()
             data["name"] = data["name"].title()
             vaccine = VaccineModel(**data)
             db.session.add(vaccine)
             db.session.commit()
+            vaccine = vaccine.__dict__
+            del vaccine['_sa_instance_state']
             return jsonify(vaccine), HTTPStatus.CREATED
     except IntegrityError:
         return jsonify({"error": "cpf already registered"}), HTTPStatus.CONFLICT
-
-    except (KeyError, TypeError):
+    except (TypeError):
         return jsonify({"error": {"expected_keys": request_keys,"incoming_keys": missing_keys}}), HTTPStatus.BAD_REQUEST
 
 
@@ -50,4 +53,9 @@ def get_vaccine():
         .query
         .all()
     )
-    return jsonify({"vaccines_card": vaccines}), HTTPStatus.OK
+    result = []
+    for vaccine in vaccines:
+        vaccine = vaccine.__dict__
+        vaccine.pop('_sa_instance_state', None)
+        result.append(vaccine)
+    return jsonify({"vaccines_card": result}), HTTPStatus.OK
