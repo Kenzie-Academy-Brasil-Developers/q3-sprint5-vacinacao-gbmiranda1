@@ -46,7 +46,6 @@ def create_vaccine():
                 "health_unit_name": vaccine.health_unit_name,
                 "first_shot_date": vaccine.first_shot_date,
                 "second_shot_date": vaccine.second_shot_date,
-                "date": vaccine.date,
             }), HTTPStatus.CREATED
     except IntegrityError:
         return jsonify({"error": "cpf already registered"}), HTTPStatus.CONFLICT
