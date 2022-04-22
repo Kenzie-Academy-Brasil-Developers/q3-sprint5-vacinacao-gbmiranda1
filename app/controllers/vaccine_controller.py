@@ -38,9 +38,16 @@ def create_vaccine():
             vaccine = VaccineModel(**data)
             db.session.add(vaccine)
             db.session.commit()
-            vaccine = vaccine.__dict__
-            del vaccine['_sa_instance_state']
-            return jsonify(vaccine), HTTPStatus.CREATED
+          
+            return jsonify({
+                "name": vaccine.name,
+                "cpf": vaccine.cpf,
+                "vaccine_name": vaccine.vaccine_name,
+                "health_unit_name": vaccine.health_unit_name,
+                "first_shot_date": vaccine.first_shot_date,
+                "second_shot_date": vaccine.second_shot_date,
+                "date": vaccine.date,
+            }), HTTPStatus.CREATED
     except IntegrityError:
         return jsonify({"error": "cpf already registered"}), HTTPStatus.CONFLICT
     except (TypeError):
